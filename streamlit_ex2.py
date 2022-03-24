@@ -220,7 +220,7 @@ def main():
             if data_file.name.endswith('csv'):
                 df = pd.read_csv(data_file)
             elif data_file.name.endswith('xlsx'):
-                df = pd.ExcelFile(data_file).parse()
+                df = pd.ExcelFile(data_file)
             
             # Plot hit picking
             f, ax = plt.subplots(figsize = (5, 3))
