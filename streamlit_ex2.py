@@ -289,7 +289,7 @@ def main():
                 counter = 0
                 while counter*num_plates < total_plates:
                     counter += 1
-                    df_chunk = hit_df[deconvoluted_df['SourcePlate'] <= counter*num_plates]
+                    df_chunk = hit_df[hit_df['SourcePlate'] <= counter*num_plates]
                     df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
