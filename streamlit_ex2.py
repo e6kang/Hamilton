@@ -180,7 +180,6 @@ class FileDownloader(object):
 	def download(self):
 		b64 = base64.b64encode(self.data.encode()).decode()
 		new_filename = "{}_{}_.{}".format(self.filename,timestr,self.file_ext)
-		st.markdown("#### Download File ###")
 		href = f'<a href="data:file/{self.file_ext};base64,{b64}" download="{new_filename}">Click Here!!</a>'
 		st.markdown(href,unsafe_allow_html=True)
 
@@ -266,13 +265,38 @@ def main():
             elif data_file.name.endswith('xlsx'):
                 df = pd.ExcelFile(data_file).parse()
         
+            for col in df.columns.values:
+                if 'plate' in col.lower():
+                    df.rename(columns = {col: 'SourcePlate'},inplace = True)
+                elif 'well' in col.lower():
+                    df.rename(columns = {col: 'SourceWell'},inplace = True)
+                
             hit_df = hit_rearrangement(df)
             st.dataframe(hit_df)
             
-            download = FileDownloader(
-                hit_df.to_csv(), 
-                filename = '%s_hit_rearrangement'%data_file_name, 
-                file_ext='csv').download()
+            # If resulting file has to be grouped by a specific number of plates for download
+            num_plates = st.number_input('Group plates by: ', 0, 12, 0, 1)
+
+            if num_plates == 0:
+                st.markdown("#### Download File ###")
+                download = FileDownloader(
+                    deconvoluted_df.to_csv(index = False), 
+                    filename = '%s_deconvoluted'%data_file_name, 
+                    file_ext='csv').download()
+
+            else:
+                total_plates = deconvoluted_df['SourcePlate'].max()
+                counter = 0
+                while counter*num_plates < total_plates:
+                    counter += 1
+                    df_chunk = deconvoluted_df[deconvoluted_df['SourcePlate'] <= counter*num_plates]
+                    df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
+                    
+                    st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
+                    download = FileDownloader(
+                        df_chunk.to_csv(index = False),
+                        filename = '%s_deconvoluted_%d'%(data_file_name, counter),
+                        file_ext='csv').download()
         
     
     if choice == 'Deconvolution':
@@ -304,16 +328,46 @@ def main():
                 df = pd.read_csv(data_file)
             elif data_file.name.endswith('xlsx'):
                 df = pd.ExcelFile(data_file).parse()
+                
+            for col in df.columns.values:
+                if 'plate' in col.lower():
+                    df.rename(columns = {col: 'SourcePlate'},inplace = True)
+                elif 'well' in col.lower():
+                    df.rename(columns = {col: 'SourceWell'},inplace = True)
         
             if pool_choice == 'quadrant':
                 deconvoluted_df = deconvolution(df, 'q')
+                deconvoluted_df.sort_values(['SourcePlate', 'SourceWell'], inplace = True)
             elif pool_choice == 'plate':
                 deconvoluted_df = deconvolution(df, 'p')
             st.dataframe(deconvoluted_df)
+
             
-            download = FileDownloader(
-                deconvoluted_df.to_csv(), 
-                filename = '%s_deconvoluted'%data_file_name, 
-                file_ext='csv').download()
+            # If resulting file has to be grouped by a specific number of plates for download
+            num_plates = st.number_input('Group plates by: ', 0, 12, 0, 1)
+
+            if num_plates == 0:
+                st.markdown("#### Download File ###")
+                download = FileDownloader(
+                    deconvoluted_df.to_csv(index = False), 
+                    filename = '%s_deconvoluted'%data_file_name, 
+                    file_ext='csv').download()
+
+            else:
+                total_plates = deconvoluted_df['SourcePlate'].max()
+                counter = 0
+                while counter*num_plates < total_plates:
+                    counter += 1
+                    df_chunk = deconvoluted_df[deconvoluted_df['SourcePlate'] <= counter*num_plates]
+                    df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
+                    
+                    st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
+                    download = FileDownloader(
+                        df_chunk.to_csv(index = False),
+                        filename = '%s_deconvoluted_%d'%(data_file_name, counter),
+                        file_ext='csv').download()
+                    
+                    
+                
 
 main()
