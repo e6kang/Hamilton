@@ -280,21 +280,21 @@ def main():
             if num_plates == 0:
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
-                    deconvoluted_df.to_csv('', index = False), 
+                    hit_df.to_csv(index = False), 
                     filename = '%s_deconvoluted'%data_file_name, 
                     file_ext='csv').download()
 
             else:
-                total_plates = deconvoluted_df['SourcePlate'].max()
+                total_plates = hit_df['SourcePlate'].max()
                 counter = 0
                 while counter*num_plates < total_plates:
                     counter += 1
-                    df_chunk = deconvoluted_df[deconvoluted_df['SourcePlate'] <= counter*num_plates]
+                    df_chunk = hit_df[deconvoluted_df['SourcePlate'] <= counter*num_plates]
                     df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
-                        df_chunk.to_csv('', index = False),
+                        df_chunk.to_csv(index = False),
                         filename = '%s_deconvoluted_%d'%(data_file_name, counter),
                         file_ext='csv').download()
         
@@ -349,7 +349,7 @@ def main():
             if num_plates == 0:
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
-                    deconvoluted_df.to_csv('', index = False), 
+                    deconvoluted_df.to_csv(index = False), 
                     filename = '%s_deconvoluted'%data_file_name, 
                     file_ext='csv').download()
 
@@ -363,7 +363,7 @@ def main():
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
-                        df_chunk.to_csv('', index = False),
+                        df_chunk.to_csv(index = False),
                         filename = '%s_deconvoluted_%d'%(data_file_name, counter),
                         file_ext='csv').download()
                     
