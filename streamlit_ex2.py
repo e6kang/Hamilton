@@ -280,9 +280,8 @@ def main():
             if num_plates == 0:
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
-                    deconvoluted_df.to_csv( 
-                    filename = '%s_deconvoluted'%data_file_name,
-                    index = False,
+                    deconvoluted_df.to_csv('', index = False), 
+                    filename = '%s_deconvoluted'%data_file_name, 
                     file_ext='csv').download()
 
             else:
@@ -295,9 +294,8 @@ def main():
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
-                        df_chunk.to_csv(
+                        df_chunk.to_csv('', index = False),
                         filename = '%s_deconvoluted_%d'%(data_file_name, counter),
-                        index = False,
                         file_ext='csv').download()
         
     
@@ -351,9 +349,8 @@ def main():
             if num_plates == 0:
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
-                    deconvoluted_df.to_csv(
-                    filename = '%s_deconvoluted'%data_file_name,
-                    index = False,
+                    deconvoluted_df.to_csv('', index = False), 
+                    filename = '%s_deconvoluted'%data_file_name, 
                     file_ext='csv').download()
 
             else:
@@ -366,9 +363,8 @@ def main():
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
-                        df_chunk.to_csv(
+                        df_chunk.to_csv('', index = False),
                         filename = '%s_deconvoluted_%d'%(data_file_name, counter),
-                        index = False,
                         file_ext='csv').download()
                     
                     
