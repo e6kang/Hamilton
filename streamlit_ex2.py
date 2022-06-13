@@ -176,7 +176,10 @@ def reformat_wellID(df):
     cols = curr_df.columns
     for col in cols:
         if 'WELL' in col.upper():
-            curr_df[col] = curr_df[col].apply(lambda x: x[0]+int(x[1:]))
+            curr_df[col] = curr_df[col].apply(lambda x: x[0]+str(int(x[1:])))
+
+    print(curr_df)
+
     return curr_df
 
 class FileDownloader(object):
@@ -283,7 +286,7 @@ def main():
                 
             hit_df = hit_rearrangement(df)
             reformatted_df = reformat_wellID(hit_df)
-            st.dataframe(hit_df)
+            st.dataframe(reformatted_df)
             
             # If resulting file has to be grouped by a specific number of plates for download
             num_plates = st.number_input('Group plates by: ', 0, 12, 0, 1)
@@ -352,7 +355,7 @@ def main():
             elif pool_choice == 'plate':
                 deconvoluted_df = deconvolution(df, 'p')
             reformatted_df = reformat_wellID(deconvoluted_df)
-            st.dataframe(deconvoluted_df)
+            st.dataframe(reformatted_df)
 
             
             # If resulting file has to be grouped by a specific number of plates for download
