@@ -169,6 +169,16 @@ def hit_rearrangement(hits):
     
     return hits_df
 
+# Remove unnecessary zeros
+def reformat_wellID(df):
+    curr_df = df.copy()
+
+    cols = curr_df.columns
+    for col in cols:
+        if 'WELL' in col.upper():
+            curr_df[col] = curr_df[col].apply(lambda x: x[0]+int(x[1:]))
+    return curr_df
+
 class FileDownloader(object):
 	
 	def __init__(self, data,filename='myfile',file_ext='txt'):
@@ -272,6 +282,7 @@ def main():
                     df.rename(columns = {col: 'SourceWell'},inplace = True)
                 
             hit_df = hit_rearrangement(df)
+            reformatted_df = reformat_wellID(hit_df)
             st.dataframe(hit_df)
             
             # If resulting file has to be grouped by a specific number of plates for download
@@ -280,7 +291,7 @@ def main():
             if num_plates == 0:
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
-                    hit_df.to_csv(index = False), 
+                    reformatted_df.to_csv(index = False), 
                     filename = '%s_deconvoluted'%data_file_name, 
                     file_ext='csv').download()
 
@@ -289,7 +300,7 @@ def main():
                 counter = 0
                 while counter*num_plates < total_plates:
                     counter += 1
-                    df_chunk = hit_df[hit_df['SourcePlate'] <= counter*num_plates]
+                    df_chunk = reformatted_df[reformatted_df['SourcePlate'] <= counter*num_plates]
                     df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
@@ -340,6 +351,7 @@ def main():
                 deconvoluted_df.sort_values(['SourcePlate', 'SourceWell'], inplace = True)
             elif pool_choice == 'plate':
                 deconvoluted_df = deconvolution(df, 'p')
+            reformatted_df = reformat_wellID(deconvoluted_df)
             st.dataframe(deconvoluted_df)
 
             
@@ -349,16 +361,16 @@ def main():
             if num_plates == 0:
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
-                    deconvoluted_df.to_csv(index = False), 
+                    reformatted_df.to_csv(index = False), 
                     filename = '%s_deconvoluted'%data_file_name, 
                     file_ext='csv').download()
 
             else:
-                total_plates = deconvoluted_df['SourcePlate'].max()
+                total_plates = reformatted_df['SourcePlate'].max()
                 counter = 0
                 while counter*num_plates < total_plates:
                     counter += 1
-                    df_chunk = deconvoluted_df[deconvoluted_df['SourcePlate'] <= counter*num_plates]
+                    df_chunk = reformatted_df[reformatted_df['SourcePlate'] <= counter*num_plates]
                     df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
