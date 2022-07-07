@@ -25,6 +25,7 @@ alphabet = alphabet[:num_plate_rows]
 col_ids = list(range(1, 25))
 
 well_dict = {}
+plate_96well_ls =[]
 plate_384well_ls = []
 
 # Fill in the well_dict
@@ -43,6 +44,8 @@ for row in range(num_plate_rows):
     # Retain well ids for the row in the current row identifier
     well_dict[curr_row_id] = row_ls
     plate_384well_ls += row_ls
+    if row < 8:
+        plate_96well_ls += row_ls[:12]
     
 plate_384_format = pd.DataFrame.from_dict(well_dict, orient = 'index', columns = col_ids)
 
@@ -138,24 +141,33 @@ def deconvolution(hits, pooling_type = 'plate'):
     deconv_plate_ls = deconv_plate_ls[:num_rows]
     vol_ls = [40]*num_rows
     
-    hits_df = hits_df.assign(DestPlate = deconv_plate_ls)
+    hits_df = hits_df.assign(DestPlt = deconv_plate_ls)
     hits_df = hits_df.assign(DestWell = deconv_well_ls)
     hits_df = hits_df.assign(Vol = vol_ls)
     
     return hits_df
 
 # Input for hit rearrangment -- hit rearrangement from deconvolution screen
-def hit_rearrangement(hits):
+def hit_rearrangement(hits, plate_type = '384 well'):
+    NUM_WELLS = 0
+    plate_ls = []
+    if '384' in plate_type:
+        NUM_WELLS = 384
+        plate_ls = plate_384well_ls
+    else:
+        NUM_WELLS = 96
+        plate_ls = plate_96well_ls
+        
     hits_df = hits.copy()
     num_rows, num_cols = hits_df.shape
-    num_hit_plates = int(np.ceil(num_rows/384))
+    num_hit_plates = int(np.ceil(num_rows/NUM_WELLS))
     
     # Make hit plate
     hit_well_ls = []
     hit_plate_ls = []
     for i in range(num_hit_plates):
-        hit_well_ls += plate_384well_ls
-        curr_plate_ls = [i+1]*384
+        hit_well_ls += plate_ls
+        curr_plate_ls = [i+1]*NUM_WELLS
         hit_plate_ls += curr_plate_ls
     
     # Make deconvolution plate and well lists the same size as the hits list
@@ -163,7 +175,7 @@ def hit_rearrangement(hits):
     hit_plate_ls = hit_plate_ls[:num_rows]
     vol_ls = [50]*num_rows
     
-    hits_df = hits_df.assign(DestPlate = hit_plate_ls)
+    hits_df = hits_df.assign(DestPlt = hit_plate_ls)
     hits_df = hits_df.assign(DestWell = hit_well_ls)
     hits_df = hits_df.assign(Vol = vol_ls)
     
@@ -265,7 +277,9 @@ def main():
             st.write(df_ex)
             
         data_file = st.file_uploader('Upload csv', type = ['csv', 'xlsx'])
-        
+
+        plate_type = st.selectbox('Select hit plate type:',
+                                  ('96 well', '384 well'))
         if data_file is not None:
             # To see details
             file_details = {'filename': data_file.name, 
@@ -284,8 +298,10 @@ def main():
                 elif 'well' in col.lower():
                     df.rename(columns = {col: 'SourceWell'},inplace = True)
                 
-            hit_df = hit_rearrangement(df)
+            hit_df = hit_rearrangement(df, plate_type)
             reformatted_df = reformat_wellID(hit_df)
+            reformatted_df['SourcePlate'] = reformatted_df['SourcePlate'].apply(lambda x: 'Source%d'%x)
+            reformatted_df['DestPlt'] = reformatted_df['DestPlt'].apply(lambda x: 'Dest%d'%x)
             st.dataframe(reformatted_df)
             
             # If resulting file has to be grouped by a specific number of plates for download
@@ -295,7 +311,7 @@ def main():
                 st.markdown("#### Download File ###")
                 download = FileDownloader(
                     reformatted_df.to_csv(index = False), 
-                    filename = '%s_deconvoluted'%data_file_name, 
+                    filename = '%s_hits'%data_file_name, 
                     file_ext='csv').download()
 
             else:
@@ -309,7 +325,7 @@ def main():
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
                         df_chunk.to_csv(index = False),
-                        filename = '%s_deconvoluted_%d'%(data_file_name, counter),
+                        filename = '%s_hits_%d'%(data_file_name, counter),
                         file_ext='csv').download()
         
     
@@ -321,7 +337,7 @@ def main():
         plate_ex = [1, 1, 1, 2, 2, 3, 3, 3]
         well_ex = ['A02', ' A06', 'A11', 'B04', 'C06', 'C13', 'A07', 'A21']
         df_ex = pd.DataFrame([plate_ex, well_ex]).transpose()
-        df_ex.columns = ['SourcePlate', 'SourceWell']
+        df_ex.columns = ['PooledPlate', 'PooledWell']
 
         if st.checkbox('Show example:'):
             st.write(df_ex)
@@ -354,10 +370,12 @@ def main():
                 deconvoluted_df.sort_values(['SourcePlate', 'SourceWell'], inplace = True)
             elif pool_choice == 'plate':
                 deconvoluted_df = deconvolution(df, 'p')
+
             reformatted_df = reformat_wellID(deconvoluted_df)
+            reformatted_df['SourcePlate'] = reformatted_df['SourcePlate'].apply(lambda x: 'Source%d'%x)
+            reformatted_df['DestPlt'] = reformatted_df['DestPlt'].apply(lambda x: 'Dest%d'%x)
             st.dataframe(reformatted_df)
 
-            
             # If resulting file has to be grouped by a specific number of plates for download
             num_plates = st.number_input('Group plates by: ', 0, 12, 0, 1)
 
