@@ -3,6 +3,7 @@ import streamlit.components as stc
 import base64 
 import time
 timestr = time.strftime("%Y%m%d-%H%M%S")
+import re
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -315,12 +316,17 @@ def main():
                     file_ext='csv').download()
 
             else:
-                total_plates = hit_df['SourcePlate'].max()
+                if reformatted_df['SourcePlate'].dtype != int:
+                    reformatted_df['src'] = reformatted_df['SourcePlate'].apply(lambda x: int(re.findall('[0-9]+', x)[0]))
+                else:
+                    reformatted_df['src'] = reformatted_df['SourcePlate']
+                total_plates = reformatted_df['src'].max()
                 counter = 0
                 while counter*num_plates < total_plates:
                     counter += 1
-                    df_chunk = reformatted_df[reformatted_df['SourcePlate'] <= counter*num_plates]
-                    df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
+                    df_chunk = reformatted_df[reformatted_df['src'] <= counter*num_plates]
+                    df_chunk = df_chunk[df_chunk['src'] > (counter-1)*num_plates]
+                    df_chunk.drop(columns = ['src'], inplace = True)
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
@@ -387,12 +393,17 @@ def main():
                     file_ext='csv').download()
 
             else:
-                total_plates = reformatted_df['SourcePlate'].max()
+                if reformatted_df['SourcePlate'].dtype != int:
+                    reformatted_df['src'] = reformatted_df['SourcePlate'].apply(lambda x: int(re.findall('[0-9]+', x)[0]))
+                else:
+                    reformatted_df['src'] = reformatted_df['SourcePlate']
+                total_plates = reformatted_df['src'].max()
                 counter = 0
                 while counter*num_plates < total_plates:
                     counter += 1
-                    df_chunk = reformatted_df[reformatted_df['SourcePlate'] <= counter*num_plates]
-                    df_chunk = df_chunk[df_chunk['SourcePlate'] > (counter-1)*num_plates]
+                    df_chunk = reformatted_df[reformatted_df['src'] <= counter*num_plates]
+                    df_chunk = df_chunk[df_chunk['src'] > (counter-1)*num_plates]
+                    df_chunk.drop(columns = ['src'], inplace = True)
                     
                     st.markdown("#### Download File for Plates %d-%d ###"%((counter-1)*num_plates+1, counter*num_plates))
                     download = FileDownloader(
